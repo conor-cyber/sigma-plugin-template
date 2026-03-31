@@ -1,27 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { client, useConfig, useElementData } from '@sigmacomputing/plugin';
+import { client, useConfig, useVariable } from '@sigmacomputing/plugin';
 import { Button } from './components/ui/button';
 import { Settings as SettingsIcon } from 'lucide-react';
 import Settings, { DEFAULT_SETTINGS } from './Settings';
 import {
   SigmaConfig,
-  SigmaData,
   PluginSettings,
   ConfigParseError
 } from './types/sigma';
 import PipelineReport from './components/PipelineReport';
 import './App.css';
 
-// Configure the plugin editor panel with control variables and action triggers
+// Configure the plugin editor panel
 client.config.configureEditorPanel([
-  { name: 'source', type: 'element' },
-  { name: 'dataColumn', type: 'column', source: 'source', allowMultiple: false, label: 'Data Column' },
-  { name: 'config', type: 'text', label: 'Settings Config (JSON)', defaultValue: "{}" },
+  { name: 'reportContent', type: 'variable', label: 'Report Markdown Control' },
+  { name: 'config', type: 'text', label: 'Settings Config (JSON)', defaultValue: '{}' },
   { name: 'editMode', type: 'toggle', label: 'Edit Mode' },
-  // Control variable example - can be used to pass data between plugin and workbook
-  { name: 'selectedValue', type: 'variable', label: 'Selected Value Variable' },
-  // Action trigger example - can be used to trigger actions in the workbook
-  { name: 'onValueSelect', type: 'action-trigger', label: 'On Value Select Action' }
 ]);
 
 // Mirror of theme presets for applying CSS variables after save
@@ -160,9 +154,23 @@ const SAMPLE_MARKDOWN = `# 🏥 EMEA Pipeline Health Report for the week of Marc
    - Expected Next Week: All deals >100 days in stage have documented timeline reset or disqualification decision with updated close date in CRM.
 `;
 
+// Defensively unwrap variable values — Sigma may return primitives, {value: ...}, or nested objects
+function unwrapVariable(raw: unknown): string {
+  if (typeof raw === 'string') return raw;
+  if (raw && typeof raw === 'object') {
+    const v = raw as Record<string, unknown>;
+    if (typeof v.value === 'string') return v.value;
+    if (v.value && typeof v.value === 'object') {
+      const inner = v.value as Record<string, unknown>;
+      if (typeof inner.value === 'string') return inner.value;
+    }
+  }
+  return '';
+}
+
 const App: React.FC = (): React.JSX.Element => {
   const config: SigmaConfig = useConfig();
-  const sigmaData: SigmaData = useElementData(config.source || '');
+  const [reportContent] = useVariable(config.reportContent || '');
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [settings, setSettings] = useState<PluginSettings>(DEFAULT_SETTINGS);
 
@@ -206,28 +214,13 @@ const App: React.FC = (): React.JSX.Element => {
     setShowSettings(false);
   }, []);
 
-  // First cell of the selected column, coerced to string (numbers/booleans won't crash parseReport)
-  const rawCell = config.dataColumn ? sigmaData?.[config.dataColumn]?.[0] : undefined;
-  const sigmaMarkdown =
-    rawCell === undefined || rawCell === null ? '' : String(rawCell);
-  const hasReportFromSigma = sigmaMarkdown.trim().length > 0;
+  // Read markdown from the bound Sigma control variable
+  const controlMarkdown = unwrapVariable(reportContent);
 
-  // Sample report only for local dev when no source is wired (CRA dev server / preview)
-  const useDevSample =
-    process.env.NODE_ENV === 'development' && !config.source;
+  // Fall back to sample data in local dev when no control is wired
+  const markdownText = controlMarkdown || SAMPLE_MARKDOWN;
 
-  const markdownText =
-    config.source && config.dataColumn && hasReportFromSigma
-      ? sigmaMarkdown
-      : useDevSample
-        ? SAMPLE_MARKDOWN
-        : '';
-
-  const emptyMessage = !config.source
-    ? 'Select a data source in the editor panel to get started.'
-    : !config.dataColumn
-      ? 'Select the column containing your markdown report.'
-      : 'No data found in the selected column.';
+  const emptyMessage = 'Bind the "Report Markdown Control" in the editor panel to get started.';
 
   return (
     <div className="min-h-screen relative">

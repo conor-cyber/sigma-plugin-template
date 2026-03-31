@@ -1,13 +1,8 @@
 // Sigma plugin configuration types
 export interface SigmaConfig {
-  source?: string;
-  dataColumn?: string;
+  reportContent?: string;
   config?: string;
   editMode?: boolean;
-  // Control variable example
-  selectedValue?: string;
-  // Action trigger example
-  onValueSelect?: string;
 }
 
 // Sigma data structure - more specific typing
