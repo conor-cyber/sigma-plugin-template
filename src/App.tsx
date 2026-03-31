@@ -231,7 +231,7 @@ const App: React.FC = (): React.JSX.Element => {
   const emptyMessage = 'Bind the "Report Markdown Control" in the editor panel to get started.';
 
   return (
-    <div className="min-h-screen relative">
+    <div className="relative">
       {config.editMode && (
         <>
           <Button

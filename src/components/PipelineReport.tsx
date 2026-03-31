@@ -280,7 +280,7 @@ const PipelineReport: React.FC<PipelineReportProps> = ({ markdown }) => {
   const report: ParsedReport = parseReport(markdown);
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans">
+    <div className="bg-slate-100 font-sans">
       {/* Header */}
       <header className="report-header bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-8 py-10">
         <h1 className="text-2xl font-bold leading-tight tracking-tight">{report.title}</h1>
