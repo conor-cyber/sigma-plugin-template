@@ -216,8 +216,7 @@ const App: React.FC = (): React.JSX.Element => {
 
   // Read markdown from the bound Sigma control variable
   const controlMarkdown = unwrapVariable(reportContent);
-  console.log('[PipelinePlugin] reportContent raw:', reportContent, '| type:', typeof reportContent);
-  console.log('[PipelinePlugin] controlMarkdown:', controlMarkdown?.slice(0, 80));
+  const debugInfo = `type: ${typeof reportContent} | raw: ${JSON.stringify(reportContent)?.slice(0, 120)}`;
 
   // Fall back to sample data in local dev when no control is wired
   const markdownText = controlMarkdown || SAMPLE_MARKDOWN;
@@ -227,14 +226,19 @@ const App: React.FC = (): React.JSX.Element => {
   return (
     <div className="min-h-screen relative">
       {config.editMode && (
-        <Button
-          className="fixed top-4 right-4 z-50 gap-2 shadow-lg"
-          onClick={handleShowSettings}
-          size="sm"
-        >
-          <SettingsIcon className="h-4 w-4" />
-          Settings
-        </Button>
+        <>
+          <Button
+            className="fixed top-4 right-4 z-50 gap-2 shadow-lg"
+            onClick={handleShowSettings}
+            size="sm"
+          >
+            <SettingsIcon className="h-4 w-4" />
+            Settings
+          </Button>
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/80 text-green-400 text-xs font-mono px-3 py-1 truncate">
+            {debugInfo}
+          </div>
+        </>
       )}
 
       {markdownText ? (
