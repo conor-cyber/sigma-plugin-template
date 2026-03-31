@@ -58,6 +58,48 @@
   }
 
   /* ── Prevent awkward page breaks ── */
-  table   { page-break-inside: avoid; }
-  section { page-break-inside: avoid; }
+
+  /* Sections and tables as a whole */
+  section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Individual table rows — most common split point */
+  table, thead, tbody, tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Keep table header pinned to its first data row */
+  thead {
+    display: table-header-group;
+  }
+
+  /* Executive summary cards */
+  .summary-card-green,
+  .summary-card-yellow,
+  .summary-card-orange,
+  .summary-card-neutral {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* CTA list items */
+  ol li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Keep section label + title together with first child */
+  section > div:first-child {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  /* Orphan / widow control */
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
 }
