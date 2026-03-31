@@ -1,7 +1,26 @@
 import React from 'react';
 import { parseReport, ParsedReport, ReportSection, SubSection, TableData, CTAItem } from '../lib/parseReport';
 
-// ─── Inline markdown renderer ────────────────────────────────────────────────
+// ─── Brand tokens ─────────────────────────────────────────────────────────────
+
+const B = {
+  blue:         '#2563EB',  // Sigma primary blue
+  blueDark:     '#1D4ED8',  // hover / emphasis
+  blueLight:    '#EFF6FF',  // card bg tint
+  blueMid:      '#DBEAFE',  // slightly richer tint
+  blueBorder:   '#BFDBFE',  // card border
+  blueSubtle:   '#93C5FD',  // muted blue accent
+  dark:         '#111827',  // primary text
+  mid:          '#374151',  // secondary text
+  muted:        '#6B7280',  // tertiary text
+  bg:           '#FFFFFF',
+  surface:      '#F9FAFB',  // alternating rows
+  surfaceMid:   '#F3F4F6',  // hover / zebra
+  border:       '#E5E7EB',  // neutral dividers
+  borderLight:  '#F0F0F0',
+} as const;
+
+// ─── Inline markdown renderer ─────────────────────────────────────────────────
 
 function renderInline(text: string): React.ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*)/);
@@ -16,23 +35,25 @@ function renderInline(text: string): React.ReactNode {
   );
 }
 
-// ─── Health score helpers ─────────────────────────────────────────────────────
+// ─── Health / days helpers ────────────────────────────────────────────────────
 
 function extractNumber(cell: string): number | null {
   const match = cell.match(/(\d+\.?\d*)/);
   return match ? parseFloat(match[1]) : null;
 }
 
-function healthBadgeClasses(score: number): string {
-  if (score >= 7) return 'badge-green bg-emerald-100 text-emerald-800 border border-emerald-300';
-  if (score >= 5) return 'badge-yellow bg-amber-100 text-amber-800 border border-amber-300';
-  return 'badge-red bg-red-100 text-red-800 border border-red-300';
+type BadgeStyle = { bg: string; color: string; border: string; cssClass: string };
+
+function healthBadge(score: number): BadgeStyle {
+  if (score >= 7) return { bg: '#DCFCE7', color: '#166534', border: '#BBF7D0', cssClass: 'badge-green' };
+  if (score >= 5) return { bg: '#FEF9C3', color: '#854D0E', border: '#FEF08A', cssClass: 'badge-yellow' };
+  return { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA', cssClass: 'badge-red' };
 }
 
-function daysUrgencyClasses(days: number): string {
-  if (days >= 100) return 'days-red bg-red-100 text-red-800 font-bold';
-  if (days >= 60) return 'days-yellow bg-amber-100 text-amber-800 font-semibold';
-  return 'days-green bg-emerald-100 text-emerald-800';
+function daysBadge(days: number): BadgeStyle {
+  if (days >= 100) return { bg: '#FEE2E2', color: '#991B1B', border: '#FECACA', cssClass: 'days-red' };
+  if (days >= 60)  return { bg: '#FEF9C3', color: '#854D0E', border: '#FEF08A', cssClass: 'days-yellow' };
+  return { bg: '#DCFCE7', color: '#166534', border: '#BBF7D0', cssClass: 'days-green' };
 }
 
 type ColumnType = 'health' | 'days' | 'acv' | 'normal';
@@ -45,7 +66,7 @@ function getColumnType(header: string): ColumnType {
   return 'normal';
 }
 
-// ─── Section type detection ───────────────────────────────────────────────────
+// ─── Section variant detection ────────────────────────────────────────────────
 
 function getSectionVariant(title: string): 'executive' | 'performance' | 'development' | 'deals' | 'ctas' | 'generic' {
   const t = title.toLowerCase();
@@ -57,28 +78,92 @@ function getSectionVariant(title: string): 'executive' | 'performance' | 'develo
   return 'generic';
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Executive summary card config ───────────────────────────────────────────
 
-const SUBSECTION_STYLES: Record<SubSection['color'], { border: string; bg: string; printClass: string; icon: string; titleColor: string }> = {
-  green:   { border: 'border-l-4 border-emerald-500', bg: 'bg-emerald-50',  printClass: 'summary-card-green',   icon: '🟢', titleColor: 'text-emerald-800' },
-  yellow:  { border: 'border-l-4 border-amber-400',   bg: 'bg-amber-50',    printClass: 'summary-card-yellow',  icon: '🟡', titleColor: 'text-amber-800'   },
-  orange:  { border: 'border-l-4 border-orange-500',  bg: 'bg-orange-50',   printClass: 'summary-card-orange',  icon: '⚡', titleColor: 'text-orange-800'  },
-  neutral: { border: 'border-l-4 border-slate-300',   bg: 'bg-slate-50',    printClass: 'summary-card-neutral', icon: '•',  titleColor: 'text-slate-700'   },
+interface CardConfig {
+  bg: string;
+  leftBorder: string;
+  outerBorder: string;
+  titleColor: string;
+  dotBg: string;
+  printClass: string;
+}
+
+const CARD_CONFIG: Record<SubSection['color'], CardConfig> = {
+  green: {
+    bg:          '#F0FDF4',
+    leftBorder:  '#16A34A',
+    outerBorder: '#BBF7D0',
+    titleColor:  '#15803D',
+    dotBg:       '#16A34A',
+    printClass:  'summary-card-green',
+  },
+  yellow: {
+    bg:          '#FEFCE8',
+    leftBorder:  '#CA8A04',
+    outerBorder: '#FDE68A',
+    titleColor:  '#A16207',
+    dotBg:       '#CA8A04',
+    printClass:  'summary-card-yellow',
+  },
+  orange: {
+    bg:          '#FFF7ED',
+    leftBorder:  '#EA580C',
+    outerBorder: '#FED7AA',
+    titleColor:  '#C2410C',
+    dotBg:       '#EA580C',
+    printClass:  'summary-card-orange',
+  },
+  neutral: {
+    bg:          B.blueLight,
+    leftBorder:  B.blue,
+    outerBorder: B.blueBorder,
+    titleColor:  B.blueDark,
+    dotBg:       B.blue,
+    printClass:  'summary-card-neutral',
+  },
 };
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
 function ExecutiveSummaryCard({ subsection }: { subsection: SubSection }) {
-  const styles = SUBSECTION_STYLES[subsection.color];
-  const cleanTitle = subsection.title.replace(/^[🟢🟡⚡]\s*/, '');
+  const cfg = CARD_CONFIG[subsection.color];
+  const cleanTitle = subsection.title.replace(/^[🟢🟡⚡🔴]\s*/, '');
 
   return (
-    <div className={`rounded-lg p-5 ${styles.border} ${styles.bg} ${styles.printClass} flex flex-col gap-3`}>
-      <h3 className={`font-semibold text-sm uppercase tracking-wide ${styles.titleColor}`}>
+    <div
+      className={`rounded-xl p-5 flex flex-col gap-3 ${cfg.printClass}`}
+      style={{
+        background:     cfg.bg,
+        borderTop:    `1px solid ${cfg.outerBorder}`,
+        borderRight:  `1px solid ${cfg.outerBorder}`,
+        borderBottom: `1px solid ${cfg.outerBorder}`,
+        borderLeft:   `4px solid ${cfg.leftBorder}`,
+      }}
+    >
+      <h3
+        className="text-xs font-bold uppercase tracking-widest"
+        style={{ color: cfg.titleColor }}
+      >
         {cleanTitle}
       </h3>
-      <ul className="space-y-2">
+      <ul className="space-y-2.5">
         {subsection.bullets.map((bullet, i) => (
-          <li key={i} className="flex gap-2 text-sm text-slate-700 leading-relaxed">
-            <span className="mt-0.5 shrink-0 text-xs">{styles.icon}</span>
+          <li key={i} className="flex gap-2.5 text-sm leading-relaxed" style={{ color: B.mid }}>
+            <span
+              className="shrink-0 mt-0.5 flex items-center justify-center rounded-full text-white"
+              style={{
+                background: cfg.dotBg,
+                width: '16px',
+                height: '16px',
+                minWidth: '16px',
+                minHeight: '16px',
+                fontSize: '9px',
+                fontWeight: 700,
+              }}
+            >
+              ✓
+            </span>
             <span>{renderInline(bullet)}</span>
           </li>
         ))}
@@ -87,19 +172,18 @@ function ExecutiveSummaryCard({ subsection }: { subsection: SubSection }) {
   );
 }
 
-function StyledTable({ table, variant }: { table: TableData; variant?: string }) {
+function StyledTable({ table }: { table: TableData }) {
   const columnTypes = table.headers.map(getColumnType);
-  const isDevelopment = variant === 'development';
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200">
+    <div className="overflow-x-auto rounded-xl" style={{ border: `1px solid ${B.border}` }}>
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className={`table-header-dark ${isDevelopment ? 'bg-slate-700 text-white' : 'bg-slate-800 text-white'}`}>
+          <tr className="table-header-sigma" style={{ background: B.blue }}>
             {table.headers.map((h, i) => (
               <th
                 key={i}
-                className={`px-4 py-3 text-left font-medium tracking-wide text-xs uppercase whitespace-nowrap ${
+                className={`px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider whitespace-nowrap text-white ${
                   columnTypes[i] === 'acv' ? 'text-right' : ''
                 }`}
               >
@@ -110,16 +194,20 @@ function StyledTable({ table, variant }: { table: TableData; variant?: string })
         </thead>
         <tbody>
           {table.rows.map((row, ri) => (
-            <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+            <tr key={ri} style={{ background: ri % 2 === 0 ? B.bg : B.surfaceMid }}>
               {row.map((cell, ci) => {
                 const colType = columnTypes[ci] ?? 'normal';
 
                 if (colType === 'health') {
                   const score = extractNumber(cell);
+                  const badge = score !== null ? healthBadge(score) : null;
                   return (
                     <td key={ci} className="px-4 py-3">
-                      {score !== null ? (
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${healthBadgeClasses(score)}`}>
+                      {badge ? (
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${badge.cssClass}`}
+                          style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}
+                        >
                           {score}
                         </span>
                       ) : cell}
@@ -129,10 +217,14 @@ function StyledTable({ table, variant }: { table: TableData; variant?: string })
 
                 if (colType === 'days') {
                   const days = extractNumber(cell);
+                  const badge = days !== null ? daysBadge(days) : null;
                   return (
                     <td key={ci} className="px-4 py-3">
-                      {days !== null ? (
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded text-xs ${daysUrgencyClasses(days)}`}>
+                      {badge ? (
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-semibold ${badge.cssClass}`}
+                          style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}
+                        >
                           {days}d
                         </span>
                       ) : cell}
@@ -142,14 +234,14 @@ function StyledTable({ table, variant }: { table: TableData; variant?: string })
 
                 if (colType === 'acv') {
                   return (
-                    <td key={ci} className="px-4 py-3 text-right font-semibold text-slate-800 tabular-nums">
+                    <td key={ci} className="px-4 py-3 text-right font-bold tabular-nums" style={{ color: B.dark }}>
                       {cell}
                     </td>
                   );
                 }
 
                 return (
-                  <td key={ci} className="px-4 py-3 text-slate-700 leading-relaxed">
+                  <td key={ci} className="px-4 py-3 leading-relaxed" style={{ color: B.mid }}>
                     {renderInline(cell)}
                   </td>
                 );
@@ -164,17 +256,38 @@ function StyledTable({ table, variant }: { table: TableData; variant?: string })
 
 function CTAList({ ctas }: { ctas: CTAItem[] }) {
   return (
-    <ol className="space-y-4">
+    <ol className="space-y-5">
       {ctas.map((cta, i) => (
         <li key={i} className="flex gap-4">
-          <span className="cta-circle flex-shrink-0 w-7 h-7 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center mt-0.5">
+          <span
+            className="cta-circle flex-shrink-0 flex items-center justify-center rounded-full text-sm font-bold text-white"
+            style={{
+              background:  B.blue,
+              width:       '32px',
+              height:      '32px',
+              minWidth:    '32px',
+              minHeight:   '32px',
+              marginTop:   '2px',
+            }}
+          >
             {i + 1}
           </span>
           <div className="flex-1 min-w-0">
-            <p className="font-semibold text-slate-900 leading-snug">{renderInline(cta.title)}</p>
+            <p className="font-semibold leading-snug" style={{ color: B.dark }}>
+              {renderInline(cta.title)}
+            </p>
             {cta.expected && (
-              <p className="mt-1.5 text-sm text-slate-500 bg-slate-50 rounded px-3 py-2 border-l-2 border-indigo-300">
-                <span className="font-medium text-slate-600">Expected next week: </span>
+              <p
+                className="mt-2 text-sm leading-relaxed rounded-lg px-4 py-2.5"
+                style={{
+                  color:       B.muted,
+                  background:  B.blueLight,
+                  borderLeft:  `3px solid ${B.blueBorder}`,
+                }}
+              >
+                <span className="font-semibold" style={{ color: B.blueDark }}>
+                  Expected next week:{' '}
+                </span>
                 {renderInline(cta.expected)}
               </p>
             )}
@@ -185,27 +298,57 @@ function CTAList({ ctas }: { ctas: CTAItem[] }) {
   );
 }
 
-// ─── Section renderers ────────────────────────────────────────────────────────
+// ─── Section wrapper ──────────────────────────────────────────────────────────
 
-function SectionWrapper({ title, children, accent }: { title: string; children: React.ReactNode; accent?: string }) {
+function SectionWrapper({
+  title,
+  label,
+  children,
+}: {
+  title: string;
+  label?: string;
+  children: React.ReactNode;
+}) {
+  const cleanTitle = title.replace(/^[📊🏆🎯🚨⚡]\s*/, '');
+
   return (
     <section className="space-y-4">
-      <div className={`flex items-center gap-2 pb-2 border-b-2 ${accent || 'border-indigo-200'}`}>
-        <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+      <div className="pb-3" style={{ borderBottom: `2px solid ${B.blue}` }}>
+        {label && (
+          <p
+            className="text-xs font-bold uppercase tracking-widest mb-0.5"
+            style={{ color: B.blue }}
+          >
+            {label}
+          </p>
+        )}
+        <h2 className="text-xl font-bold" style={{ color: B.dark }}>
+          {cleanTitle}
+        </h2>
       </div>
       {children}
     </section>
   );
 }
 
+// ─── Section renderers ────────────────────────────────────────────────────────
+
 function renderSection(section: ReportSection) {
   const variant = getSectionVariant(section.title);
 
-  // Executive summary — 3 subsection cards
+  // ── Executive summary ────────────────────────────────
   if (variant === 'executive' && section.subsections.length > 0) {
     return (
-      <SectionWrapper title={section.title} accent="border-slate-300" key={section.id}>
-        <div className={`grid gap-4 ${section.subsections.length === 3 ? 'grid-cols-3' : section.subsections.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+      <SectionWrapper title={section.title} label="Pipeline Overview" key={section.id}>
+        <div
+          className={`grid gap-4 ${
+            section.subsections.length === 3
+              ? 'grid-cols-3'
+              : section.subsections.length === 2
+              ? 'grid-cols-2'
+              : 'grid-cols-1'
+          }`}
+        >
           {section.subsections.map((sub, i) => (
             <ExecutiveSummaryCard key={i} subsection={sub} />
           ))}
@@ -214,57 +357,77 @@ function renderSection(section: ReportSection) {
     );
   }
 
-  // Performance leaders
+  // ── Performance leaders ──────────────────────────────
   if (variant === 'performance') {
     return (
-      <SectionWrapper title={section.title} accent="border-emerald-300" key={section.id}>
+      <SectionWrapper title={section.title} label="Top Performers" key={section.id}>
         {section.theme && (
-          <p className="text-sm text-slate-600 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 leading-relaxed">
+          <p
+            className="text-sm leading-relaxed rounded-xl px-4 py-3"
+            style={{
+              color:      B.mid,
+              background: B.blueLight,
+              borderLeft: `4px solid ${B.blue}`,
+            }}
+          >
             {renderInline(section.theme)}
           </p>
         )}
-        {section.table && <StyledTable table={section.table} variant="performance" />}
+        {section.table && <StyledTable table={section.table} />}
       </SectionWrapper>
     );
   }
 
-  // Development opportunities
+  // ── Development opportunities ────────────────────────
   if (variant === 'development') {
     return (
-      <SectionWrapper title={section.title} accent="border-red-200" key={section.id}>
+      <SectionWrapper title={section.title} label="Coaching Required" key={section.id}>
         {section.theme && (
-          <p className="text-sm text-slate-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 leading-relaxed">
+          <p
+            className="text-sm leading-relaxed rounded-xl px-4 py-3"
+            style={{
+              color:      B.mid,
+              background: '#FFF7ED',
+              borderLeft: '4px solid #EA580C',
+            }}
+          >
             {renderInline(section.theme)}
           </p>
         )}
-        {section.table && <StyledTable table={section.table} variant="development" />}
+        {section.table && <StyledTable table={section.table} />}
       </SectionWrapper>
     );
   }
 
-  // Priority attention deals
+  // ── Priority deals ───────────────────────────────────
   if (variant === 'deals') {
     return (
-      <SectionWrapper title={section.title} accent="border-amber-300" key={section.id}>
-        {section.table && <StyledTable table={section.table} variant="deals" />}
+      <SectionWrapper title={section.title} label="Requires Attention" key={section.id}>
+        {section.table && <StyledTable table={section.table} />}
       </SectionWrapper>
     );
   }
 
-  // Weekly CTAs
+  // ── Weekly CTAs ──────────────────────────────────────
   if (variant === 'ctas' && section.ctas && section.ctas.length > 0) {
     return (
-      <SectionWrapper title={section.title} accent="border-indigo-300" key={section.id}>
+      <SectionWrapper title={section.title} label="Actions This Week" key={section.id}>
         <CTAList ctas={section.ctas} />
       </SectionWrapper>
     );
   }
 
-  // Generic fallback — render subsections + table if present
+  // ── Generic fallback ─────────────────────────────────
   return (
     <SectionWrapper title={section.title} key={section.id}>
-      {section.theme && <p className="text-sm text-slate-600 leading-relaxed">{renderInline(section.theme)}</p>}
-      {section.subsections.map((sub, i) => <ExecutiveSummaryCard key={i} subsection={sub} />)}
+      {section.theme && (
+        <p className="text-sm leading-relaxed" style={{ color: B.muted }}>
+          {renderInline(section.theme)}
+        </p>
+      )}
+      {section.subsections.map((sub, i) => (
+        <ExecutiveSummaryCard key={i} subsection={sub} />
+      ))}
       {section.table && <StyledTable table={section.table} />}
     </SectionWrapper>
   );
@@ -280,21 +443,52 @@ const PipelineReport: React.FC<PipelineReportProps> = ({ markdown }) => {
   const report: ParsedReport = parseReport(markdown);
 
   return (
-    <div className="bg-slate-100 font-sans" style={{ minWidth: '960px' }}>
-      {/* Header */}
-      <header className="report-header bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-8 py-10">
-        <h1 className="text-2xl font-bold leading-tight tracking-tight">{report.title}</h1>
-        {report.quote && (
-          <p className="mt-4 text-sm text-indigo-200 italic max-w-3xl leading-relaxed">
-            &ldquo;{report.quote}&rdquo;
-          </p>
-        )}
+    <div className="font-sans" style={{ minWidth: '960px', background: B.bg }}>
+
+      {/* ── Header ── */}
+      <header className="report-header px-10 py-10" style={{ background: B.blue }}>
+        <div className="flex items-start gap-4">
+          <div className="flex-1">
+            {/* Sigma wordmark pill */}
+            <div className="flex items-center gap-3 mb-5">
+              <span
+                className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full"
+                style={{ background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.9)' }}
+              >
+                Sigma
+              </span>
+              <span className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
+                Pipeline Intelligence
+              </span>
+            </div>
+
+            <h1
+              className="leading-tight text-white"
+              style={{ fontSize: '26px', fontFamily: '"DM Serif Display", Georgia, serif', maxWidth: '700px' }}
+            >
+              {report.title}
+            </h1>
+
+            {report.quote && (
+              <p
+                className="mt-4 text-sm italic leading-relaxed"
+                style={{ color: 'rgba(255,255,255,0.75)', maxWidth: '640px' }}
+              >
+                &ldquo;{report.quote}&rdquo;
+              </p>
+            )}
+          </div>
+        </div>
       </header>
 
-      {/* Body */}
-      <main className="max-w-7xl mx-auto px-8 py-8 space-y-10">
+      {/* ── Body ── */}
+      <main
+        className="mx-auto px-8 py-8 space-y-10"
+        style={{ maxWidth: '1280px' }}
+      >
         {report.sections.map(renderSection)}
       </main>
+
     </div>
   );
 };
