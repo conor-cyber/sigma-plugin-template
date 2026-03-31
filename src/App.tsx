@@ -216,6 +216,8 @@ const App: React.FC = (): React.JSX.Element => {
 
   // Read markdown from the bound Sigma control variable
   const controlMarkdown = unwrapVariable(reportContent);
+  console.log('[PipelinePlugin] reportContent raw:', reportContent, '| type:', typeof reportContent);
+  console.log('[PipelinePlugin] controlMarkdown:', controlMarkdown?.slice(0, 80));
 
   // Fall back to sample data in local dev when no control is wired
   const markdownText = controlMarkdown || SAMPLE_MARKDOWN;
