@@ -1,2 +1,63 @@
-/* Template plugin styles */
-/* Add your custom styles here */ 
+/* ─── Print / PDF export overrides ──────────────────────────────────────────
+   Sigma's PDF renderer uses headless Chromium in print mode. Tailwind gradients
+   and some background utilities don't survive print rendering cleanly, so we
+   explicitly set the colours we need for a crisp PDF export.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@media print {
+  /* Force backgrounds to print (Chromium strips them by default) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Report header — replace gradient with flat dark navy */
+  header.report-header {
+    background: #0f172a !important;
+    color: #ffffff !important;
+  }
+
+  /* Executive summary cards */
+  .summary-card-green {
+    background-color: #f0fdf4 !important;
+    border-left-color: #22c55e !important;
+  }
+  .summary-card-yellow {
+    background-color: #fefce8 !important;
+    border-left-color: #facc15 !important;
+  }
+  .summary-card-orange {
+    background-color: #fff7ed !important;
+    border-left-color: #f97316 !important;
+  }
+  .summary-card-neutral {
+    background-color: #f8fafc !important;
+    border-left-color: #cbd5e1 !important;
+  }
+
+  /* Table headers */
+  .table-header-dark {
+    background-color: #1e293b !important;
+    color: #ffffff !important;
+  }
+
+  /* Health score badges */
+  .badge-green  { background-color: #dcfce7 !important; color: #166534 !important; }
+  .badge-yellow { background-color: #fef9c3 !important; color: #854d0e !important; }
+  .badge-red    { background-color: #fee2e2 !important; color: #991b1b !important; }
+
+  /* Days urgency */
+  .days-red    { background-color: #fee2e2 !important; color: #991b1b !important; }
+  .days-yellow { background-color: #fef9c3 !important; color: #854d0e !important; }
+  .days-green  { background-color: #dcfce7 !important; color: #166534 !important; }
+
+  /* CTA circles */
+  .cta-circle {
+    background-color: #4f46e5 !important;
+    color: #ffffff !important;
+  }
+
+  /* Ensure page breaks don't split tables awkwardly */
+  table { page-break-inside: avoid; }
+  section { page-break-inside: avoid; }
+}

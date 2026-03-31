@@ -24,15 +24,15 @@ function extractNumber(cell: string): number | null {
 }
 
 function healthBadgeClasses(score: number): string {
-  if (score >= 7) return 'bg-emerald-100 text-emerald-800 border border-emerald-300';
-  if (score >= 5) return 'bg-amber-100 text-amber-800 border border-amber-300';
-  return 'bg-red-100 text-red-800 border border-red-300';
+  if (score >= 7) return 'badge-green bg-emerald-100 text-emerald-800 border border-emerald-300';
+  if (score >= 5) return 'badge-yellow bg-amber-100 text-amber-800 border border-amber-300';
+  return 'badge-red bg-red-100 text-red-800 border border-red-300';
 }
 
 function daysUrgencyClasses(days: number): string {
-  if (days >= 100) return 'bg-red-100 text-red-800 font-bold';
-  if (days >= 60) return 'bg-amber-100 text-amber-800 font-semibold';
-  return 'bg-emerald-100 text-emerald-800';
+  if (days >= 100) return 'days-red bg-red-100 text-red-800 font-bold';
+  if (days >= 60) return 'days-yellow bg-amber-100 text-amber-800 font-semibold';
+  return 'days-green bg-emerald-100 text-emerald-800';
 }
 
 type ColumnType = 'health' | 'days' | 'acv' | 'normal';
@@ -59,11 +59,11 @@ function getSectionVariant(title: string): 'executive' | 'performance' | 'develo
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const SUBSECTION_STYLES: Record<SubSection['color'], { border: string; bg: string; icon: string; titleColor: string }> = {
-  green:   { border: 'border-l-4 border-emerald-500', bg: 'bg-emerald-50',  icon: '🟢', titleColor: 'text-emerald-800' },
-  yellow:  { border: 'border-l-4 border-amber-400',   bg: 'bg-amber-50',    icon: '🟡', titleColor: 'text-amber-800'   },
-  orange:  { border: 'border-l-4 border-orange-500',  bg: 'bg-orange-50',   icon: '⚡', titleColor: 'text-orange-800'  },
-  neutral: { border: 'border-l-4 border-slate-300',   bg: 'bg-slate-50',    icon: '•',  titleColor: 'text-slate-700'   },
+const SUBSECTION_STYLES: Record<SubSection['color'], { border: string; bg: string; printClass: string; icon: string; titleColor: string }> = {
+  green:   { border: 'border-l-4 border-emerald-500', bg: 'bg-emerald-50',  printClass: 'summary-card-green',   icon: '🟢', titleColor: 'text-emerald-800' },
+  yellow:  { border: 'border-l-4 border-amber-400',   bg: 'bg-amber-50',    printClass: 'summary-card-yellow',  icon: '🟡', titleColor: 'text-amber-800'   },
+  orange:  { border: 'border-l-4 border-orange-500',  bg: 'bg-orange-50',   printClass: 'summary-card-orange',  icon: '⚡', titleColor: 'text-orange-800'  },
+  neutral: { border: 'border-l-4 border-slate-300',   bg: 'bg-slate-50',    printClass: 'summary-card-neutral', icon: '•',  titleColor: 'text-slate-700'   },
 };
 
 function ExecutiveSummaryCard({ subsection }: { subsection: SubSection }) {
@@ -71,7 +71,7 @@ function ExecutiveSummaryCard({ subsection }: { subsection: SubSection }) {
   const cleanTitle = subsection.title.replace(/^[🟢🟡⚡]\s*/, '');
 
   return (
-    <div className={`rounded-lg p-5 ${styles.border} ${styles.bg} flex flex-col gap-3`}>
+    <div className={`rounded-lg p-5 ${styles.border} ${styles.bg} ${styles.printClass} flex flex-col gap-3`}>
       <h3 className={`font-semibold text-sm uppercase tracking-wide ${styles.titleColor}`}>
         {cleanTitle}
       </h3>
@@ -95,7 +95,7 @@ function StyledTable({ table, variant }: { table: TableData; variant?: string })
     <div className="overflow-x-auto rounded-lg border border-slate-200">
       <table className="w-full text-sm border-collapse">
         <thead>
-          <tr className={isDevelopment ? 'bg-slate-700 text-white' : 'bg-slate-800 text-white'}>
+          <tr className={`table-header-dark ${isDevelopment ? 'bg-slate-700 text-white' : 'bg-slate-800 text-white'}`}>
             {table.headers.map((h, i) => (
               <th
                 key={i}
@@ -167,7 +167,7 @@ function CTAList({ ctas }: { ctas: CTAItem[] }) {
     <ol className="space-y-4">
       {ctas.map((cta, i) => (
         <li key={i} className="flex gap-4">
-          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center mt-0.5">
+          <span className="cta-circle flex-shrink-0 w-7 h-7 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center mt-0.5">
             {i + 1}
           </span>
           <div className="flex-1 min-w-0">
@@ -282,7 +282,7 @@ const PipelineReport: React.FC<PipelineReportProps> = ({ markdown }) => {
   return (
     <div className="min-h-screen bg-slate-100 font-sans">
       {/* Header */}
-      <header className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-8 py-10">
+      <header className="report-header bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-8 py-10">
         <h1 className="text-2xl font-bold leading-tight tracking-tight">{report.title}</h1>
         {report.quote && (
           <p className="mt-4 text-sm text-indigo-200 italic max-w-3xl leading-relaxed">
