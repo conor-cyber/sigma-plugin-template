@@ -159,7 +159,14 @@ function unwrapVariable(raw: unknown): string {
   if (typeof raw === 'string') return raw;
   if (raw && typeof raw === 'object') {
     const v = raw as Record<string, unknown>;
+    // { defaultValue: { value: "..." } } — Sigma control variable format
+    if (v.defaultValue && typeof v.defaultValue === 'object') {
+      const dv = v.defaultValue as Record<string, unknown>;
+      if (typeof dv.value === 'string') return dv.value;
+    }
+    // { value: "..." }
     if (typeof v.value === 'string') return v.value;
+    // { value: { value: "..." } }
     if (v.value && typeof v.value === 'object') {
       const inner = v.value as Record<string, unknown>;
       if (typeof inner.value === 'string') return inner.value;
