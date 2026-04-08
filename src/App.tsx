@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { client, useConfig, useVariable } from '@sigmacomputing/plugin';
+import { client, useConfig, useElementData } from '@sigmacomputing/plugin';
 import { Button } from './components/ui/button';
 import { Settings as SettingsIcon } from 'lucide-react';
 import Settings, { DEFAULT_SETTINGS } from './Settings';
@@ -13,9 +13,10 @@ import './App.css';
 
 // Configure the plugin editor panel
 client.config.configureEditorPanel([
-  { name: 'reportContent', type: 'variable', label: 'Report Markdown Control' },
-  { name: 'config', type: 'text', label: 'Settings Config (JSON)', defaultValue: '{}' },
-  { name: 'editMode', type: 'toggle', label: 'Edit Mode' },
+  { name: 'reportData',      type: 'element', label: 'Report Input Table' },
+  { name: 'markdownColumn',  type: 'column',  source: 'reportData', label: 'Markdown Column', allowMultiple: false },
+  { name: 'config',          type: 'text',    label: 'Settings Config (JSON)', defaultValue: '{}' },
+  { name: 'editMode',        type: 'toggle',  label: 'Edit Mode' },
 ]);
 
 // Mirror of theme presets for applying CSS variables after save
@@ -154,30 +155,10 @@ const SAMPLE_MARKDOWN = `# 🏥 EMEA Pipeline Health Report for the week of Marc
    - Expected Next Week: All deals >100 days in stage have documented timeline reset or disqualification decision with updated close date in CRM.
 `;
 
-// Defensively unwrap variable values — Sigma may return primitives, {value: ...}, or nested objects
-function unwrapVariable(raw: unknown): string {
-  if (typeof raw === 'string') return raw;
-  if (raw && typeof raw === 'object') {
-    const v = raw as Record<string, unknown>;
-    // { defaultValue: { value: "..." } } — Sigma control variable format
-    if (v.defaultValue && typeof v.defaultValue === 'object') {
-      const dv = v.defaultValue as Record<string, unknown>;
-      if (typeof dv.value === 'string') return dv.value;
-    }
-    // { value: "..." }
-    if (typeof v.value === 'string') return v.value;
-    // { value: { value: "..." } }
-    if (v.value && typeof v.value === 'object') {
-      const inner = v.value as Record<string, unknown>;
-      if (typeof inner.value === 'string') return inner.value;
-    }
-  }
-  return '';
-}
 
 const App: React.FC = (): React.JSX.Element => {
   const config: SigmaConfig = useConfig();
-  const [reportContent] = useVariable(config.reportContent || '');
+  const sigmaData = useElementData(config.reportData ?? '');
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [settings, setSettings] = useState<PluginSettings>(DEFAULT_SETTINGS);
 
@@ -221,14 +202,16 @@ const App: React.FC = (): React.JSX.Element => {
     setShowSettings(false);
   }, []);
 
-  // Read markdown from the bound Sigma control variable
-  const controlMarkdown = unwrapVariable(reportContent);
-  const debugInfo = `type: ${typeof reportContent} | raw: ${JSON.stringify(reportContent)?.slice(0, 120)}`;
+  // Read markdown from the bound Input Table — take the last row (most recent report)
+  const columnValues = config.markdownColumn ? sigmaData?.[config.markdownColumn] : undefined;
+  const lastValue = columnValues?.length ? columnValues[columnValues.length - 1] : undefined;
+  const tableMarkdown = typeof lastValue === 'string' ? lastValue : '';
+  const debugInfo = `rows: ${columnValues?.length ?? 0} | col: ${config.markdownColumn} | preview: ${tableMarkdown.slice(0, 80)}`;
 
-  // Fall back to sample data in local dev when no control is wired
-  const markdownText = controlMarkdown || SAMPLE_MARKDOWN;
+  // Fall back to sample data in local dev when no table is wired
+  const markdownText = tableMarkdown || SAMPLE_MARKDOWN;
 
-  const emptyMessage = 'Bind the "Report Markdown Control" in the editor panel to get started.';
+  const emptyMessage = 'Bind the "Report Input Table" and select the markdown column in the editor panel.';
 
   return (
     <div className="relative">

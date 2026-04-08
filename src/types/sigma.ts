@@ -1,6 +1,7 @@
 // Sigma plugin configuration types
 export interface SigmaConfig {
-  reportContent?: string;
+  reportData?: string;       // bound Input Table element
+  markdownColumn?: string;   // which column holds the markdown text
   config?: string;
   editMode?: boolean;
 }
